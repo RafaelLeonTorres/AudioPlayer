@@ -26,15 +26,13 @@
                 </ScrollViewer>
             </Border>
 
-
             <!-- Barra de progreso -->
             <Slider x:Name="ProgressBar" Minimum="0" Maximum="100" ValueChanged="ProgressBar_ValueChanged" Margin="10" Height="5"
                 Background="#666" Foreground="#0DBD8B" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Content="⏮" Click="Previous_Click" Width="50" Height="50" FontSize="20" Background="#3a3f4b" Foreground="White"/>
-                <Button Content="▶" Click="Play_Click" Width="50" Height="50" FontSize="20" Background="#3a3f4b" Foreground="White"/>
-                <Button Content="⏸" Click="Pause_Click" Width="50" Height="50" FontSize="20" Background="#3a3f4b" Foreground="White"/>
+                <Button x:Name="PlayPauseButton" Content="▶" Click="PlayPause_Click" Width="50" Height="50" FontSize="20" Background="#3a3f4b" Foreground="White"/>
                 <Button Content="⏭" Click="Next_Click" Width="50" Height="50" FontSize="20" Background="#3a3f4b" Foreground="White"/>
             </StackPanel>
 

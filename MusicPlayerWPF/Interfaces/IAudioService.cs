@@ -8,9 +8,11 @@ namespace MusicPlayerWPF.Interfaces
 {
     public interface IAudioService
     {
+        List<string> GetPlaylist();
         void LoadPlaylist(List<string> playlist);
-        void LoadTrack(int index);
+        Task LoadTrackAsync(string cancion);
         void Play();
+        void Play(string cancion);
         void Pause();
         void Stop();
         void Next();
@@ -18,7 +20,13 @@ namespace MusicPlayerWPF.Interfaces
         void Seek(int seconds);
         void SetRandom(bool isRandom);
         void SetEqualizer(float[] bands);
-        double GetCurrentPosition();  // Nuevo método para obtener la posición actual de la canción
-        double GetTotalTime();        // Duración total de la canción
+        void SetEqualizer(List<int> bands);
+        double GetCurrentPosition();
+        double GetTotalTime();
+        bool IsPlaying(); // Nuevo método para verificar si se está reproduciendo
+        void Dispose();
+        event Action<int> TrackChanged;
+        event Action<bool> PlaybackStateChanged;
+        event Action<string> ErrorOccurred;
     }
 }

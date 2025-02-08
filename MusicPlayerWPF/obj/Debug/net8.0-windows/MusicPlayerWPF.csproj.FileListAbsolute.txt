@@ -22,6 +22,7 @@ F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windo
 F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\MusicPlayerWPF.AssemblyInfoInputs.cache
 F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\MusicPlayerWPF.AssemblyInfo.cs
 F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\MusicPlayerWPF.csproj.CoreCompileInputs.cache
+F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\MusicPlayerWPF.sourcelink.json
 F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\MusicPla.5D70C39A.Up2Date
 F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\MusicPlayerWPF.dll
 F:\Respaldo\Respaldo\Cursos\MusicPlayerWPF\MusicPlayerWPF\obj\Debug\net8.0-windows\refint\MusicPlayerWPF.dll

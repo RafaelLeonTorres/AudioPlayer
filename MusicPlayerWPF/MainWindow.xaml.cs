@@ -13,17 +13,19 @@ namespace MusicPlayerWPF
     public partial class MainWindow : Window
     {
         private readonly IAudioService _audioService;
-        private List<string> _playlist;
         private float[] _equalizerGains = new float[10]; // Almacena los valores de las 10 bandas
-
         private DispatcherTimer _progressTimer; // Temporizador para actualizar la barra de progreso
 
         public MainWindow()
         {
             InitializeComponent();
-            _audioService = new AudioService();
-            _playlist = new List<string>();
-            PlaylistView.ItemsSource = _playlist;
+            _audioService = AudioService.Instance; // Obtener la instancia única de AudioService
+            PlaylistView.ItemsSource = _audioService.GetPlaylist();
+
+            // Suscribirse a los eventos
+            _audioService.TrackChanged += OnTrackChanged;
+            _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
+            _audioService.ErrorOccurred += OnErrorOccurred;
 
             // Inicializa el temporizador
             _progressTimer = new DispatcherTimer
@@ -33,11 +35,30 @@ namespace MusicPlayerWPF
             _progressTimer.Tick += Timer_Tick;
         }
 
+        private void OnTrackChanged(int trackIndex)
+        {
+            // Actualizar la interfaz de usuario cuando cambia la pista
+            PlaylistView.SelectedIndex = trackIndex;
+            PlaylistView.ScrollIntoView(PlaylistView.SelectedItem);
+        }
+
+        private void OnPlaybackStateChanged(bool isPlaying)
+        {
+            // Actualizar la interfaz de usuario cuando cambia el estado de reproducción
+            PlayPauseButton.Content = isPlaying ? "⏸" : "▶";
+        }
+
+        private void OnErrorOccurred(string errorMessage)
+        {
+            // Mostrar mensajes de error
+            MessageBox.Show(errorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
         private void Timer_Tick(object sender, EventArgs e)
         {
             // Obtener el tiempo de reproducción actual y la duración total de la canción
             var currentTime = _audioService.GetCurrentPosition();  // Tiempo actual en segundos
-            var totalTime = _audioService.GetTotalTime();          // Duración total de la canción en segundos
+            double totalTime = _audioService.GetTotalTime();       // Duración total de la canción en segundos
 
             // Actualiza la barra de progreso si hay tiempo total
             if (totalTime > 0)
@@ -46,7 +67,7 @@ namespace MusicPlayerWPF
             }
         }
 
-        private void AddSongs_Click(object sender, RoutedEventArgs e)
+        private async void AddSongs_Click(object sender, RoutedEventArgs e)
         {
             // Abre el diálogo de selección de archivos de audio
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -58,66 +79,50 @@ namespace MusicPlayerWPF
 
             if (openFileDialog.ShowDialog() == true)
             {
-                bool isFirstAdd = _playlist.Count == 0;
-
-                // Añadir canciones a la lista, evitando duplicados
-                foreach (string filePath in openFileDialog.FileNames)
+                if (openFileDialog.FileNames.Any())
                 {
-                    if (!_playlist.Contains(filePath))
-                    {
-                        _playlist.Add(filePath);
-                    }
-                }
-
-                PlaylistView.Items.Refresh();
-
-                // Solo carga y reproduce si es la primera vez que se agrega canciones
-                if (isFirstAdd && _playlist.Count > 0)
-                {
-                    _audioService.LoadPlaylist(_playlist);
-                    _audioService.Play();
+                    List<string> list = openFileDialog.FileNames.ToList();
+                    _audioService.LoadPlaylist(list);
+                    PlaylistView.ItemsSource = _audioService.GetPlaylist();
+                    PlaylistView.Items.Refresh();
                 }
             }
         }
 
-        private void PlaylistView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private async void PlaylistView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // Verificar si un ítem ha sido seleccionado
-            var selectedItem = PlaylistView.SelectedItem as string; // Asumiendo que la lista contiene rutas de archivo como strings
+            var cancion = PlaylistView.SelectedItem as string; // Asumiendo que la lista contiene rutas de archivo como strings
 
-            if (selectedItem != null)
+            if (cancion != null)
             {
-                _audioService.Stop();
-                // Buscar el índice del archivo seleccionado directamente en la lista
-                int selectedIndex = _playlist.IndexOf(selectedItem);
-
-                if (selectedIndex >= 0)
-                {
-                    // Cargar y reproducir la canción seleccionada
-                    _audioService.LoadTrack(selectedIndex);
-                    _audioService.Play();
-                }
+                // Cargar y reproducir la canción seleccionada
+                await _audioService.LoadTrackAsync(cancion);
+                _audioService.Play();
+                _progressTimer.Start(); // Inicia el temporizador para actualizar la barra de progreso
             }
         }
-
 
         private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             // Ajustar la posición de la canción al mover la barra de progreso
-            var position = _audioService.GetCurrentPosition();
-            ProgressBar.Value = position;
+            if (ProgressBar.IsMouseCaptureWithin)
+            {
+                double newPosition = (ProgressBar.Value / 100) * _audioService.GetTotalTime();
+                _audioService.Seek((int)newPosition);
+            }
         }
 
-        private void Play_Click(object sender, RoutedEventArgs e)
+        private void PlayPause_Click(object sender, RoutedEventArgs e)
         {
-            _audioService.Play();
-            _progressTimer.Start(); // Inicia el temporizador para actualizar la barra de progreso
-        }
-
-        private void Pause_Click(object sender, RoutedEventArgs e)
-        {
-            _audioService.Pause();
-            _progressTimer.Stop(); // Detiene el temporizador cuando se pausa
+            if (_audioService.IsPlaying())
+            {
+                _audioService.Pause();
+            }
+            else
+            {
+                _audioService.Play();
+            }
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
@@ -128,21 +133,6 @@ namespace MusicPlayerWPF
         private void Previous_Click(object sender, RoutedEventArgs e)
         {
             _audioService.Previous();
-        }
-
-        private void Random_Click(object sender, RoutedEventArgs e)
-        {
-            _audioService.SetRandom(true);
-        }
-
-        private void SeekBack_Click(object sender, RoutedEventArgs e)
-        {
-            _audioService.Seek(-10);
-        }
-
-        private void SeekForward_Click(object sender, RoutedEventArgs e)
-        {
-            _audioService.Seek(10);
         }
 
         private void EqualizerChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -158,22 +148,16 @@ namespace MusicPlayerWPF
 
                     // Actualizar las ganancias del ecualizador
                     _equalizerGains[bandIndex] = ganancia;
-
-                    // Aplicar los cambios al servicio de audio
-                    try
-                    {
-                        _audioService.SetEqualizer(_equalizerGains);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error al aplicar el ecualizador: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Índice de banda fuera de rango.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _audioService.SetEqualizer(_equalizerGains);
                 }
             }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            // Liberar recursos al cerrar la ventana
+            _audioService.Dispose();
+            base.OnClosed(e);
         }
     }
 }

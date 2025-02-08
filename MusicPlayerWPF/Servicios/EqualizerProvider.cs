@@ -10,25 +10,40 @@ public class EqualizerProvider : ISampleProvider
 
     public EqualizerProvider(ISampleProvider source)
     {
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source), "El proveedor de muestras no puede ser nulo.");
+        }
+
         _source = source;
         _bands = new BiQuadFilter[10];
 
         // Frecuencias comunes para un ecualizador de 10 bandas
         _frequencies = new float[] { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
 
+        // Inicializa los filtros para cada banda
         for (int i = 0; i < _bands.Length; i++)
         {
-            _bands[i] = BiQuadFilter.PeakingEQ(44100, _frequencies[i], 1.0f, 0);
+            _bands[i] = BiQuadFilter.PeakingEQ(_source.WaveFormat.SampleRate, _frequencies[i], 1.0f, 0);
         }
     }
 
     public void SetBands(float[] gains)
     {
-        if (gains.Length != _bands.Length) return;
+        if (gains == null)
+        {
+            throw new ArgumentNullException(nameof(gains), "El arreglo de ganancias no puede ser nulo.");
+        }
 
+        if (gains.Length != _bands.Length)
+        {
+            throw new ArgumentException("El número de ganancias debe coincidir con el número de bandas.", nameof(gains));
+        }
+
+        // Actualiza los filtros con las nuevas ganancias
         for (int i = 0; i < _bands.Length; i++)
         {
-            _bands[i] = BiQuadFilter.PeakingEQ(44100, _frequencies[i], 1.0f, gains[i]);
+            _bands[i] = BiQuadFilter.PeakingEQ(_source.WaveFormat.SampleRate, _frequencies[i], 1.0f, gains[i]);
         }
     }
 
@@ -52,12 +67,13 @@ public class EqualizerProvider : ISampleProvider
             throw new ArgumentOutOfRangeException(nameof(count), "El valor de count es inválido o excede el tamaño del buffer.");
         }
 
+        // Lee las muestras del proveedor de origen
         int samplesRead = _source.Read(buffer, offset, count);
 
-        // Asegúrate de que samplesRead no exceda el rango de los índices
+        // Si no se leyeron muestras, retornar 0
         if (samplesRead <= 0)
         {
-            return 0;  // No se leyeron muestras, por lo que no hay nada que procesar
+            return 0;
         }
 
         // Procesa las muestras y aplica la transformación de las bandas
@@ -68,15 +84,9 @@ public class EqualizerProvider : ISampleProvider
             // Aplica la transformación a cada banda
             foreach (var band in _bands)
             {
-                try
+                if (band != null) // Asegúrate de que el filtro no sea nulo
                 {
                     sample = band.Transform(sample);
-                }
-                catch (Exception ex)
-                {
-                    // Maneja cualquier error dentro de la transformación de banda
-                    Console.WriteLine($"Error al aplicar la transformación de banda: {ex.Message}");
-                    // Puedes decidir cómo manejar este error: por ejemplo, aplicar un valor por defecto o continuar
                 }
             }
 
