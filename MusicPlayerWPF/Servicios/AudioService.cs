@@ -5,11 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 public class AudioService : IAudioService, IDisposable
 {
-    private static readonly Lazy<AudioService> _instance = new Lazy<AudioService>(() => new AudioService());
-    public static AudioService Instance => _instance.Value;
-
     private WaveOutEvent _waveOut;
     private AudioFileReader? _audioFileReader;
     private EqualizerProvider? _equalizer;
@@ -24,7 +22,7 @@ public class AudioService : IAudioService, IDisposable
     public event Action<bool>? PlaybackStateChanged;
     public event Action<string>? ErrorOccurred;
 
-    private AudioService()
+    public AudioService()
     {
         _playlist = new List<string>();
         _waveOut = new WaveOutEvent();
@@ -32,10 +30,7 @@ public class AudioService : IAudioService, IDisposable
         _random = new Random();
     }
 
-    public bool IsPlaying()
-    {
-        return _isPlaying;
-    }
+    public bool IsPlaying() => _isPlaying;
 
     public List<string> GetPlaylist() => _playlist;
 
@@ -47,11 +42,14 @@ public class AudioService : IAudioService, IDisposable
             return;
         }
 
-        var nuevosElementos = playlist.Where(song => !_playlist.Contains(song)).ToList();
-        _playlist.AddRange(nuevosElementos);
+        // Filtrar las canciones que no están en _playlist
+        var nuevasCanciones = playlist.Where(cancion => !_playlist.Contains(cancion)).ToList();
+
+        // Agregar solo las canciones que no existen en _playlist
+        _playlist.AddRange(nuevasCanciones);     
     }
 
-    public async Task LoadTrackAsync(string cancion)
+    public void LoadTrack(string cancion)
     {
         if (string.IsNullOrWhiteSpace(cancion))
         {
@@ -88,39 +86,8 @@ public class AudioService : IAudioService, IDisposable
     {
         if (_audioFileReader == null && _playlist.Count > 0)
         {
-            LoadTrackAsync(_playlist[0]).Wait();
+            LoadTrack(_playlist[0]);
         }
-
-        if (_audioFileReader != null)
-        {
-            _isPlaying = true;
-            _waveOut.Play();
-            PlaybackStateChanged?.Invoke(true);
-        }
-    }
-
-    public void Play(string cancion)
-    {
-        if (string.IsNullOrWhiteSpace(cancion))
-        {
-            ErrorOccurred?.Invoke("La canción no puede estar vacía.");
-            return;
-        }
-
-        if (_audioFileReader != null && _playlist[_currentTrackIndex] == cancion)
-        {
-            if (_waveOut.PlaybackState != PlaybackState.Playing)
-            {
-                _waveOut.Play();
-                PlaybackStateChanged?.Invoke(true);
-            }
-            return;
-        }
-
-        Stop();
-        DisposeAudio();
-
-        LoadTrackAsync(cancion).Wait();
 
         if (_audioFileReader != null)
         {
@@ -154,7 +121,7 @@ public class AudioService : IAudioService, IDisposable
             ? _random.Next(0, _playlist.Count)
             : (_currentTrackIndex + 1) % _playlist.Count;
 
-        LoadTrackAsync(_playlist[_currentTrackIndex]).Wait();
+        LoadTrack(_playlist[_currentTrackIndex]);
         Play();
     }
 
@@ -164,7 +131,7 @@ public class AudioService : IAudioService, IDisposable
 
         _currentTrackIndex = (_currentTrackIndex - 1 + _playlist.Count) % _playlist.Count;
 
-        LoadTrackAsync(_playlist[_currentTrackIndex]).Wait();
+        LoadTrack(_playlist[_currentTrackIndex]);
         Play();
     }
 
@@ -183,8 +150,6 @@ public class AudioService : IAudioService, IDisposable
         if (_equalizer == null) return;
         _equalizer.SetBands(bands);
     }
-
-    public void SetEqualizer(List<int> bands) => SetEqualizer(bands.Select(x => (float)x).ToArray());
 
     public double GetCurrentPosition() => _audioFileReader?.CurrentTime.TotalSeconds ?? 0;
 
@@ -218,3 +183,4 @@ public class AudioService : IAudioService, IDisposable
         _audioFileReader?.Dispose();
     }
 }
+

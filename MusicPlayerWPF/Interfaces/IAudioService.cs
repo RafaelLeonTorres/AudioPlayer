@@ -10,9 +10,8 @@ namespace MusicPlayerWPF.Interfaces
     {
         List<string> GetPlaylist();
         void LoadPlaylist(List<string> playlist);
-        Task LoadTrackAsync(string cancion);
+        void LoadTrack(string cancion);
         void Play();
-        void Play(string cancion);
         void Pause();
         void Stop();
         void Next();
@@ -20,10 +19,9 @@ namespace MusicPlayerWPF.Interfaces
         void Seek(int seconds);
         void SetRandom(bool isRandom);
         void SetEqualizer(float[] bands);
-        void SetEqualizer(List<int> bands);
         double GetCurrentPosition();
         double GetTotalTime();
-        bool IsPlaying(); // Nuevo método para verificar si se está reproduciendo
+        bool IsPlaying();
         void Dispose();
         event Action<int> TrackChanged;
         event Action<bool> PlaybackStateChanged;

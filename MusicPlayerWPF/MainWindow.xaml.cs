@@ -19,7 +19,7 @@ namespace MusicPlayerWPF
         public MainWindow()
         {
             InitializeComponent();
-            _audioService = AudioService.Instance; // Obtener la instancia única de AudioService
+            _audioService = new AudioService(); // Crear una instancia de AudioService
             PlaylistView.ItemsSource = _audioService.GetPlaylist();
 
             // Suscribirse a los eventos
@@ -67,7 +67,7 @@ namespace MusicPlayerWPF
             }
         }
 
-        private async void AddSongs_Click(object sender, RoutedEventArgs e)
+        private void AddSongs_Click(object sender, RoutedEventArgs e)
         {
             // Abre el diálogo de selección de archivos de audio
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -89,7 +89,7 @@ namespace MusicPlayerWPF
             }
         }
 
-        private async void PlaylistView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void PlaylistView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // Verificar si un ítem ha sido seleccionado
             var cancion = PlaylistView.SelectedItem as string; // Asumiendo que la lista contiene rutas de archivo como strings
@@ -97,7 +97,7 @@ namespace MusicPlayerWPF
             if (cancion != null)
             {
                 // Cargar y reproducir la canción seleccionada
-                await _audioService.LoadTrackAsync(cancion);
+                _audioService.LoadTrack(cancion);
                 _audioService.Play();
                 _progressTimer.Start(); // Inicia el temporizador para actualizar la barra de progreso
             }
